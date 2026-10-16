@@ -1,3 +1,5 @@
+import { guardWrite } from "./guards.js";
+import { ensureWorkspace, registerProtocolTools } from "./protocol.js";
 import crypto from "node:crypto";
 import express from "express";
 import fs from "node:fs/promises";
@@ -125,6 +127,7 @@ function createServer() {
           throw new ToolError(`Content is ${bytes} bytes; the limit is ${MAX_WRITE_BYTES}.`);
         }
         const abs = await resolveSafe(p);
+        await guardWrite(abs, "write", content);
         await fs.mkdir(path.dirname(abs), { recursive: true });
         await fs.writeFile(abs, content, "utf8");
         return `Wrote ${bytes} bytes to ${p}`;
@@ -159,6 +162,7 @@ function createServer() {
         if (Buffer.byteLength(updated, "utf8") > MAX_WRITE_BYTES) {
           throw new ToolError("Result would exceed the write size limit.");
         }
+        await guardWrite(abs, "edit", updated);
         await fs.writeFile(abs, updated, "utf8");
         return `Replaced 1 occurrence in ${p}`;
       })
@@ -175,6 +179,7 @@ function createServer() {
     async ({ path: p }) =>
       run(async () => {
         const abs = await resolveSafe(p);
+        await guardWrite(abs, "delete");
         if (abs === (await fs.realpath(WORKSPACE_ROOT))) {
           throw new ToolError("Cannot delete the workspace root.");
         }
@@ -184,6 +189,7 @@ function createServer() {
         return `Deleted ${p}`;
       })
   );
+  registerProtocolTools(server, run);
 
   return server;
 }
@@ -232,8 +238,11 @@ const notAllowed = (_req: express.Request, res: express.Response) => {
 };
 app.get("/mcp", notAllowed);
 app.delete("/mcp", notAllowed);
-
-app.listen(PORT, () => {
-  console.log(`MCP server running at http://localhost:${PORT}/mcp`);
-  console.log(`Workspace root: ${WORKSPACE_ROOT}`);
-});
+ensureWorkspace()
+  .catch((e) => console.warn("Workspace setup problem:", e?.message))
+  .finally(() => {
+    app.listen(PORT, () => {
+      console.log(`MCP server running at http://localhost:${PORT}/mcp`);
+      console.log(`Workspace root: ${WORKSPACE_ROOT}`);
+    });
+  });

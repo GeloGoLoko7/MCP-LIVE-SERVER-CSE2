@@ -3,6 +3,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const guards_js_1 = require("./guards.js");
+const protocol_js_1 = require("./protocol.js");
 const node_crypto_1 = __importDefault(require("node:crypto"));
 const express_1 = __importDefault(require("express"));
 const promises_1 = __importDefault(require("node:fs/promises"));
@@ -108,6 +110,7 @@ function createServer() {
             throw new sandbox_js_1.ToolError(`Content is ${bytes} bytes; the limit is ${sandbox_js_1.MAX_WRITE_BYTES}.`);
         }
         const abs = await (0, sandbox_js_1.resolveSafe)(p);
+        await (0, guards_js_1.guardWrite)(abs, "write", content);
         await promises_1.default.mkdir(node_path_1.default.dirname(abs), { recursive: true });
         await promises_1.default.writeFile(abs, content, "utf8");
         return `Wrote ${bytes} bytes to ${p}`;
@@ -136,6 +139,7 @@ function createServer() {
         if (Buffer.byteLength(updated, "utf8") > sandbox_js_1.MAX_WRITE_BYTES) {
             throw new sandbox_js_1.ToolError("Result would exceed the write size limit.");
         }
+        await (0, guards_js_1.guardWrite)(abs, "edit", updated);
         await promises_1.default.writeFile(abs, updated, "utf8");
         return `Replaced 1 occurrence in ${p}`;
     }));
@@ -146,6 +150,7 @@ function createServer() {
         },
     }, async ({ path: p }) => run(async () => {
         const abs = await (0, sandbox_js_1.resolveSafe)(p);
+        await (0, guards_js_1.guardWrite)(abs, "delete");
         if (abs === (await promises_1.default.realpath(sandbox_js_1.WORKSPACE_ROOT))) {
             throw new sandbox_js_1.ToolError("Cannot delete the workspace root.");
         }
@@ -155,6 +160,7 @@ function createServer() {
         await promises_1.default.unlink(abs);
         return `Deleted ${p}`;
     }));
+    (0, protocol_js_1.registerProtocolTools)(server, run);
     return server;
 }
 const app = (0, express_1.default)();
@@ -198,7 +204,11 @@ const notAllowed = (_req, res) => {
 };
 app.get("/mcp", notAllowed);
 app.delete("/mcp", notAllowed);
-app.listen(PORT, () => {
-    console.log(`MCP server running at http://localhost:${PORT}/mcp`);
-    console.log(`Workspace root: ${sandbox_js_1.WORKSPACE_ROOT}`);
+(0, protocol_js_1.ensureWorkspace)()
+    .catch((e) => console.warn("Workspace setup problem:", e?.message))
+    .finally(() => {
+    app.listen(PORT, () => {
+        console.log(`MCP server running at http://localhost:${PORT}/mcp`);
+        console.log(`Workspace root: ${sandbox_js_1.WORKSPACE_ROOT}`);
+    });
 });

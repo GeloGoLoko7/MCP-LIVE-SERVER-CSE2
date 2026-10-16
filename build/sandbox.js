@@ -42,6 +42,10 @@ async function resolveSafe(userPath, root = exports.WORKSPACE_ROOT) {
             if (!isInside(realRoot, final)) {
                 throw new ToolError("Path escapes the workspace (symlink).");
             }
+            const rel = node_path_1.default.relative(realRoot, final);
+            if (rel.split(node_path_1.default.sep).includes(".git")) {
+                throw new ToolError("Access to .git is not allowed. Use the git tools.");
+            }
             return final;
         }
         catch (err) {

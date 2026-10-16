@@ -43,7 +43,12 @@ export async function resolveSafe(
       if (!isInside(realRoot, final)) {
         throw new ToolError("Path escapes the workspace (symlink).");
       }
+      const rel = path.relative(realRoot, final);
+      if (rel.split(path.sep).includes(".git")) {
+        throw new ToolError("Access to .git is not allowed. Use the git tools.");
+      }
       return final;
+
     } catch (err: any) {
       if (err instanceof ToolError) throw err;
       if (err?.code !== "ENOENT") throw err;
