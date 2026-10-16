@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import express from "express";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -189,6 +190,27 @@ function createServer() {
 
 const app = express();
 app.use(express.json());
+
+const AUTH_TOKEN = process.env.AUTH_TOKEN;
+if (!AUTH_TOKEN && process.env.NODE_ENV === "production") {
+  console.error("AUTH_TOKEN must be set in production.");
+  process.exit(1);
+}
+
+app.use("/mcp", (req, res, next) => {
+  if (!AUTH_TOKEN) return next(); // local dev only
+  const given = Buffer.from(req.headers.authorization ?? "");
+  const expected = Buffer.from(`Bearer ${AUTH_TOKEN}`);
+  const ok = given.length === expected.length && crypto.timingSafeEqual(given, expected);
+  if (!ok) {
+    return res.status(401).json({
+      jsonrpc: "2.0",
+      error: { code: -32001, message: "Unauthorized." },
+      id: null,
+    });
+  }
+  next();
+});
 
 app.post("/mcp", async (req, res) => {
   const server = createServer();

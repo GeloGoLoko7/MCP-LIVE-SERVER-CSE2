@@ -1,0 +1,1 @@
+{"version":3,"file":"sandbox.d.ts","sourceRoot":"","sources":["../src/sandbox.ts"],"names":[],"mappings":"AAGA,eAAO,MAAM,cAAc,QAE1B,CAAC;AAEF,eAAO,MAAM,cAAc,UAAY,CAAC;AACxC,eAAO,MAAM,eAAe,UAAY,CAAC;AACzC,eAAO,MAAM,gBAAgB,QAAS,CAAC;AAGvC,qBAAa,SAAU,SAAQ,KAAK;CAAG;AAMvC,wBAAsB,WAAW,CAC/B,QAAQ,EAAE,MAAM,EAChB,IAAI,GAAE,MAAuB,GAC5B,OAAO,CAAC,MAAM,CAAC,CAyCjB"}

@@ -4,10 +4,13 @@
   "description": "",
   "main": "index.js",
   "type": "module",
-    "scripts": {
-    "dev": "tsx src/index.ts",
-    "test": "node --import tsx --test src/sandbox.test.ts"
-  },
+  "scripts": {
+  "dev": "tsx src/index.ts",
+  "build": "tsc",
+  "start": "node build/index.js",
+  "test": "node --import tsx src/sandbox.test.ts"
+  },  
+
   "keywords": [],
   "author": "",
   "license": "ISC",
