@@ -2,3 +2,4 @@
    dist/
    build/
    workspace/
+   ecosystem.config.cjs
